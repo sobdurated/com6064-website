@@ -81,8 +81,6 @@ export async function GET(request: Request) {
       ], { allowDiskUse: true })
       .toArray();
 
-    console.log("items", items);
-    console.log("total", total);
     const payload: PostsResponse = {
       items: items.map((item) => ({
         id: String(item._id),

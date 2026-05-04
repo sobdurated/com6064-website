@@ -37,8 +37,6 @@ export default function SentimentMapPage() {
       const provincesJson: ProvinceMapRow[] = await provinces.json();
       const selProvince = filters.province
         ? provincesJson.find((row) => {
-          console.log(normalizeName(row.province))
-          console.log(normalizeName(filters.province))
           return normalizeName(row.province) === normalizeName(filters.province)
         })
         : undefined;
@@ -46,10 +44,6 @@ export default function SentimentMapPage() {
       setProvincesData(provincesJson);
       setSelectedProvince(selProvince);
       setTopProvince(selProvince ?? provincesJson[0]);
-      console.log("Fetching data with filters:", filters);
-      console.log("Current provinces data:", provincesJson);
-      console.log("Current selected province:", selProvince);
-      console.log("Current top province:", topProvince);
     };
 
     const fetchTags = async () => {
