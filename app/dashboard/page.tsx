@@ -98,7 +98,7 @@ function DashboardContent() {
   const kpiCards = [
     {
       title: "Total Posts",
-      value: overview?.total_posts ? overview.total_posts.toLocaleString() : "0",
+      value: overview?.total_posts ? overview.total_posts.toLocaleString() : "...",
       change: windowLabel,
       tone: "flat" as const,
     },
