@@ -58,7 +58,7 @@ export function SentimentMapCard({
         </div>
 
         <Map
-          className="h-[420px] w-full overflow-hidden border-2"
+          className="h-[500px] md:h-[600px] w-full overflow-hidden border-2"
           center={[35.2433, 38.9637]}
           zoom={5}
           minZoom={4}

@@ -4,11 +4,12 @@ type DataTableProps = {
   headers: string[];
   rows: string[][];
   caption?: string;
+  className?: string;
 };
 
-export function DataTable({ headers, rows, caption }: DataTableProps) {
+export function DataTable({ headers, rows, caption, className }: DataTableProps) {
   return (
-    <Table>
+    <Table className={className}>
       {caption ? <Table.Caption>{caption}</Table.Caption> : null}
       <Table.Header>
         <Table.Row>

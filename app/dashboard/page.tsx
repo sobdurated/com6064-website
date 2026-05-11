@@ -112,13 +112,13 @@ function DashboardContent() {
       title: "Positive Ratio",
       value: overview ? formatPercent(overview.positive_ratio) : "...",
       change: overview ? formatSignedPercent(overview.positive_ratio - overview.negative_ratio) : "...",
-      tone: "up" as const,
+      tone: (overview ? (overview.positive_ratio - overview.negative_ratio > 0 ? "up" : "down") : "flat") as "flat" | "up" | "down",
     },
     {
       title: "Negative Ratio",
       value: overview ? formatPercent(overview.negative_ratio) : "...",
-      change: overview ? formatSignedPercent(overview.positive_ratio - overview.negative_ratio) : "...",
-      tone: "down" as const,
+      change: overview ? formatSignedPercent(overview.negative_ratio - overview.positive_ratio) : "...",
+      tone: (overview ? (overview.negative_ratio - overview.positive_ratio < 0 ? "down" : "up") : "flat") as "flat" | "up" | "down",
     },
   ];
 
@@ -216,8 +216,9 @@ function DashboardContent() {
             <Card.Content className="space-y-3">
               <SectionHeader title="Top Provinces" description="Ranked by mention volume and positive share." />
               <DataTable
-                headers={["Province", "Mentions", "Positive %"]}
+                headers={["Province", "Mentions", "Pos %"]}
                 rows={topProvinceRows}
+                className="table-fixed text-xs sm:text-sm"
               />
             </Card.Content>
           </Card>

@@ -173,7 +173,10 @@ function AnalyticsContent() {
               <SectionHeader title="Sentiment Ratio" description="Current global ratio over all captured posts." />
               {sentimentData && sentimentData.length > 0 ? (
                 <PieChart
-                  data={sentimentData}
+                  data={sentimentData.map((item: SentimentRatioRow) => ({
+                    ...item,
+                    value: Math.round(item.value * 100),
+                  }))}
                   dataKey="value"
                   nameKey="label"
                   colors={["#2f9e44", "#dc2626"]}

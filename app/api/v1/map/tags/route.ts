@@ -12,6 +12,7 @@ export async function GET(request: Request) {
 
     const pipeline: any[] = [
       { $match: match },
+      { $sample: { size: 5000 } },
       {
         $addFields: {
           postObjectId: {
