@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 type FilterToolbarProps = {
   action?: string;
   onFilter?: (formData: FormData) => void;
+  onReset?: () => void;
   searchPlaceholder?: string;
   searchName?: string;
   searchValue?: string;
@@ -23,6 +24,7 @@ type FilterToolbarProps = {
 export function FilterToolbar({
   action,
   onFilter,
+  onReset,
   searchPlaceholder = "Search posts, provinces, hashtags...",
   searchName = "q",
   searchValue,
@@ -41,7 +43,9 @@ export function FilterToolbar({
   };
 
   const handleReset = () => {
-    if (onFilter) {
+    if (onReset) {
+      onReset();
+    } else if (onFilter) {
       const emptyForm = new FormData();
       onFilter(emptyForm);
     } else if (action) {

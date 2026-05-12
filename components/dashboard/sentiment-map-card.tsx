@@ -28,6 +28,7 @@ export function SentimentMapCard({
     from: string;
     to: string;
     province: string;
+    q: string;
   }>>;
 }) {
 

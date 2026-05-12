@@ -11,6 +11,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { Card } from "@/components/retroui/Card";
 import { LineChart } from "@/components/retroui/charts/LineChart";
 import { Button } from "@/components/retroui/Button";
+import { LoadingBar } from "@/components/dashboard/loading-bar";
 
 import type {
   AlertRow,
@@ -138,7 +139,6 @@ function DashboardContent() {
     row.total_posts.toLocaleString(),
     formatPercent(row.positive_ratio),
   ]);
-
   return (
     <>
       <FilterToolbar
@@ -152,7 +152,9 @@ function DashboardContent() {
         chips={filters.from || filters.to ? ["Date range active"] : []}
       />
 
-      <div className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+      <LoadingBar loading={loading} />
+
+      <div className={loading ? "opacity-50 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
         <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 mb-4 mt-4">
           {kpiCards.map((item) => (
             <StatCard

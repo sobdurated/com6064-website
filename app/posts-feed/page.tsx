@@ -11,6 +11,7 @@ import { Button } from "@/components/retroui/Button";
 import { Card } from "@/components/retroui/Card";
 import type { PostsResponse } from "@/lib/api/types";
 import { Badge } from "@/components/retroui/Badge";
+import { LoadingBar } from "@/components/dashboard/loading-bar";
 
 function formatTimestamp(value: string) {
   const date = new Date(value);
@@ -106,7 +107,10 @@ function PostsFeedContent() {
         }
       />
 
-      <Card className="w-full">
+      <LoadingBar loading={loading} />
+
+      <div className={loading ? "opacity-60 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
+        <Card className="w-full">
         <Card.Content className="space-y-3">
           <SectionHeader
             title="Post Feed"
@@ -176,7 +180,8 @@ function PostsFeedContent() {
             </div>
           ) : null}
         </Card.Content>
-      </Card>
+        </Card>
+      </div>
     </>
   );
 }

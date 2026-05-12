@@ -12,43 +12,74 @@ export async function GET(request: Request) {
 
     const match = buildProcessedMatch(filters);
 
-    const rows = await db
-      .collection(collections.postsProcessed)
-      .aggregate([
-        { $match: match },
-        // ...getSamplingPipeline(),
+    const pipeline: any[] = [
+      { $match: match }
+    ];
+
+    if (filters.q) {
+      pipeline.push(
         {
-          $group: {
-            _id: "$location.province",
-            total_posts: { $sum: 1 },
-            avg_sentiment_weight: {
-              $sum: {
-                $add: [
-                  0.5,
-                  {
-                    $switch: {
-                      branches: [
-                        {
-                          case: { $eq: [`$sentiment.${filters.model}.label`, "positive"] },
-                          then: { $divide: [`$sentiment.${filters.model}.score`, 2] },
-                        },
-                        {
-                          case: { $eq: [`$sentiment.${filters.model}.label`, "negative"] },
-                          then: { $divide: [{ $multiply: [`$sentiment.${filters.model}.score`, -1] }, 2] },
-                        },
-                      ],
-                      default: 0,
-                    },
-                  },
-                ],
-              },
+          $addFields: {
+            postObjectId: {
+              $convert: { input: "$post_id", to: "objectId", onError: null, onNull: null },
             },
-            positive_weight: { $sum: { $cond: [{ $eq: [`$sentiment.${filters.model}.label`, "positive"] }, 1, 0] } },
-            negative_weight: { $sum: { $cond: [{ $eq: [`$sentiment.${filters.model}.label`, "negative"] }, 1, 0] } },
           },
         },
-        { $sort: { total_posts: -1 } },
-      ], { allowDiskUse: true })
+        {
+          $lookup: {
+            from: collections.postsRaw,
+            localField: "postObjectId",
+            foreignField: "_id",
+            as: "raw",
+          },
+        },
+        { $unwind: "$raw" },
+        {
+          $match: {
+            "raw.post_tags": { $regex: filters.q.replace(/^#/, ""), $options: "i" },
+          },
+        }
+      );
+    }
+
+    pipeline.push(
+      {
+        $group: {
+          _id: "$location.province",
+          total_posts: { $sum: 1 },
+          avg_sentiment_weight: {
+            $sum: {
+              $add: [
+                0.5,
+                {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $eq: [`$sentiment.${filters.model}.label`, "positive"] },
+                        then: { $divide: [`$sentiment.${filters.model}.score`, 2] },
+                      },
+                      {
+                        case: { $eq: [`$sentiment.${filters.model}.label`, "negative"] },
+                        then: { $divide: [{ $multiply: [`$sentiment.${filters.model}.score`, -1] }, 2] },
+                      },
+                    ],
+                    default: 0,
+                  },
+                },
+              ],
+            },
+          },
+          positive_weight: { $sum: { $cond: [{ $eq: [`$sentiment.${filters.model}.label`, "positive"] }, 1, 0] } },
+          negative_weight: { $sum: { $cond: [{ $eq: [`$sentiment.${filters.model}.label`, "negative"] }, 1, 0] } },
+        }
+      }
+    );
+
+    pipeline.push({ $sort: { total_posts: -1 } });
+
+    const rows = await db
+      .collection(collections.postsProcessed)
+      .aggregate(pipeline, { allowDiskUse: true })
       .toArray();
 
     let payload: ProvinceMapRow[] = rows

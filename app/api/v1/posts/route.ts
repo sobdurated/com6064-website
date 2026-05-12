@@ -11,9 +11,8 @@ export async function GET(request: Request) {
 
     const match = buildProcessedMatch(filters);
 
-    const pipeline = [
+    const pipeline: any[] = [
       { $match: match },
-      // ...getSamplingPipeline(),
       { $sort: { created_at: filters.sort === "oldest" ? 1 : -1 } },
       {
         $addFields: {
@@ -43,7 +42,7 @@ export async function GET(request: Request) {
           ...(filters.q
             ? {
               $or: [
-                { "raw.text": { $regex: filters.q, $options: "i" } },
+                ...(filters.map ? [] : [{ "raw.text": { $regex: filters.q, $options: "i" } }]),
                 { "raw.post_tags": { $regex: filters.q.replace(/^#/, ""), $options: "i" } },
               ],
             }

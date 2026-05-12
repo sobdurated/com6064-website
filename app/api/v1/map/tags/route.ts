@@ -12,7 +12,6 @@ export async function GET(request: Request) {
 
     const pipeline: any[] = [
       { $match: match },
-      { $sample: { size: 5000 } },
       {
         $addFields: {
           postObjectId: {
@@ -29,7 +28,25 @@ export async function GET(request: Request) {
         },
       },
       { $unwind: "$raw" },
+      ...(filters.q
+        ? [
+          {
+            $match: {
+              "raw.post_tags": { $regex: filters.q.replace(/^#/, ""), $options: "i" },
+            },
+          },
+        ]
+        : []),
       { $unwind: "$raw.post_tags" },
+      ...(filters.q
+        ? [
+          {
+            $match: {
+              "raw.post_tags": { $regex: filters.q.replace(/^#/, ""), $options: "i" },
+            },
+          },
+        ]
+        : []),
     ];
 
     if (filters.province) {

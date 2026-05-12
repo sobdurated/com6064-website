@@ -13,6 +13,7 @@ export type CommonFilters = {
   limit: number;
   sort: "newest" | "oldest";
   model: "llm" | "transformer";
+  map?: boolean;
 };
 
 function parseDate(value: string | null): Date | null {
@@ -47,6 +48,7 @@ export function parseCommonFilters(searchParams: URLSearchParams): CommonFilters
   const sort = searchParams.get("sort") === "oldest" ? "oldest" : "newest";
   const modelRaw = searchParams.get("model");
   const model = modelRaw === "transformer" ? "transformer" : "llm";
+  const map = searchParams.get("map") === "true";
 
   return {
     from,
@@ -61,6 +63,7 @@ export function parseCommonFilters(searchParams: URLSearchParams): CommonFilters
     limit,
     sort,
     model,
+    map
   };
 }
 
