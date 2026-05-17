@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import { List, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { useModel } from "@/components/model-provider";
+import { usePipeline } from "@/components/pipeline-provider";
 
 import { DASHBOARD_NAV_ITEMS } from "@/components/dashboard/nav-items";
 import { Dialog } from "@/components/retroui/Dialog";
 import { Button } from "@/components/retroui/Button";
 import { Card } from "@/components/retroui/Card";
+import { Input } from "@/components/retroui/Input";
 import { cn } from "@/lib/utils";
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -62,6 +64,7 @@ function MobileDrawer() {
 
 function ModelSettingsDialog() {
   const { model, setModel } = useModel();
+  const { pipelineUrl, setPipelineUrl } = usePipeline();
 
   return (
     <Dialog>
@@ -72,36 +75,60 @@ function ModelSettingsDialog() {
         </Button>
       </Dialog.Trigger>
       <Dialog.Content size="sm">
-        <Dialog.Header>Model Settings</Dialog.Header>
-        <div className="p-4 space-y-4">
-          <p className="text-sm text-muted-foreground">Select the model to use for sentiment analysis across the dashboard.</p>
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 border-2 p-3 rounded cursor-pointer hover:bg-accent/50 transition-colors">
-              <input
-                type="radio"
-                name="model"
-                value="llm"
-                checked={model === "llm"}
-                onChange={() => setModel("llm")}
-                className="size-4"
-              />
-              <div className="flex flex-col">
-                <span className="font-semibold">Llama 3.1 LLM</span>
-              </div>
-            </label>
-            <label className="flex items-center gap-2 border-2 p-3 rounded cursor-pointer hover:bg-accent/50 transition-colors">
-              <input
-                type="radio"
-                name="model"
-                value="transformer"
-                checked={model === "transformer"}
-                onChange={() => setModel("transformer")}
-                className="size-4"
-              />
-              <div className="flex flex-col">
-                <span className="font-semibold">Turkish BERTurk</span>
-              </div>
-            </label>
+        <Dialog.Header>Settings</Dialog.Header>
+        <div className="p-4 space-y-5">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Sentiment Model</p>
+            <p className="text-xs text-muted-foreground">Select the model to use for sentiment analysis across the dashboard.</p>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 border-2 p-3 rounded cursor-pointer hover:bg-accent/50 transition-colors">
+                <input
+                  type="radio"
+                  name="model"
+                  value="llm"
+                  checked={model === "llm"}
+                  onChange={() => setModel("llm")}
+                  className="size-4"
+                />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Llama 3.1 LLM</span>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 border-2 p-3 rounded cursor-pointer hover:bg-accent/50 transition-colors">
+                <input
+                  type="radio"
+                  name="model"
+                  value="transformer"
+                  checked={model === "transformer"}
+                  onChange={() => setModel("transformer")}
+                  className="size-4"
+                />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Turkish BERTurk</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div className="border-t-2" />
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Pipeline Server URL</p>
+            <p className="text-xs text-muted-foreground">
+              Set the URL of the running pipeline server (e.g. an ngrok tunnel). Leave empty to disable pipeline controls.
+            </p>
+            <Input
+              id="settings-pipeline-url"
+              type="url"
+              value={pipelineUrl}
+              onChange={(e) => setPipelineUrl(e.target.value)}
+              placeholder="https://xxxx.ngrok-free.app"
+            />
+            {pipelineUrl && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                ✓ Pipeline controls enabled
+              </p>
+            )}
           </div>
         </div>
       </Dialog.Content>
@@ -146,3 +173,4 @@ export function DashboardShell({
     </div>
   );
 }
+

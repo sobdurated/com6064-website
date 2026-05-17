@@ -105,9 +105,9 @@ function DashboardContent() {
     },
     {
       title: "Average Sentiment",
-      value: overview ? overview.average_sentiment.toFixed(2) : "...",
+      value: overview ? (overview.average_sentiment > 0 ? "+" : "") + overview.average_sentiment.toFixed(2) : "...",
       change: "Weighted score",
-      tone: "flat" as const,
+      tone: (overview ? (overview.average_sentiment > 0.1 ? "up" : overview.average_sentiment < -0.1 ? "down" : "flat") : "flat") as "flat" | "up" | "down",
     },
     {
       title: "Positive Ratio",

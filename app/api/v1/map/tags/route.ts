@@ -55,7 +55,23 @@ export async function GET(request: Request) {
           $group: {
             _id: "$raw.post_tags",
             count: { $sum: 1 },
-            sentiment_sum: { $sum: `$sentiment.${filters.model}.score` },
+            sentiment_sum: {
+              $sum: {
+                $switch: {
+                  branches: [
+                    {
+                      case: { $eq: [`$sentiment.${filters.model}.label`, "positive"] },
+                      then: `$sentiment.${filters.model}.score`,
+                    },
+                    {
+                      case: { $eq: [`$sentiment.${filters.model}.label`, "negative"] },
+                      then: { $multiply: [`$sentiment.${filters.model}.score`, -1] },
+                    },
+                  ],
+                  default: 0,
+                },
+              },
+            },
           }
         },
         { $sort: { count: -1 } },
@@ -75,7 +91,23 @@ export async function GET(request: Request) {
           $group: {
             _id: { tag: "$raw.post_tags", province: "$location.province" },
             count: { $sum: 1 },
-            sentiment_sum: { $sum: `$sentiment.${filters.model}.score` },
+            sentiment_sum: {
+              $sum: {
+                $switch: {
+                  branches: [
+                    {
+                      case: { $eq: [`$sentiment.${filters.model}.label`, "positive"] },
+                      then: `$sentiment.${filters.model}.score`,
+                    },
+                    {
+                      case: { $eq: [`$sentiment.${filters.model}.label`, "negative"] },
+                      then: { $multiply: [`$sentiment.${filters.model}.score`, -1] },
+                    },
+                  ],
+                  default: 0,
+                },
+              },
+            },
           }
         },
         { $sort: { count: -1 } },
@@ -83,7 +115,7 @@ export async function GET(request: Request) {
           $group: {
             _id: "$_id.tag",
             total_count: { $sum: "$count" },
-            avg_sentiment: { $avg: { $divide: ["$sentiment_sum", "$count"] } },
+            total_sentiment_sum: { $sum: "$sentiment_sum" },
             top_province: { $first: "$_id.province" },
             top_province_count: { $first: "$count" }
           }
@@ -95,7 +127,7 @@ export async function GET(request: Request) {
             _id: 0,
             tag: "$_id",
             total_count: 1,
-            avg_sentiment: 1,
+            avg_sentiment: { $divide: ["$total_sentiment_sum", "$total_count"] },
             top_province: 1,
             top_province_count: 1
           }

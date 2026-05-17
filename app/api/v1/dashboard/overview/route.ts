@@ -22,24 +22,19 @@ export async function GET(request: Request) {
             total_posts: { $sum: 1 },
             weighted_sentiment_sum: {
               $sum: {
-                $add: [
-                  0.5,
-                  {
-                    $switch: {
-                      branches: [
-                        {
-                          case: { $eq: [`$sentiment.${filters.model}.label`, "positive"] },
-                          then: { $divide: [`$sentiment.${filters.model}.score`, 2] },
-                        },
-                        {
-                          case: { $eq: [`$sentiment.${filters.model}.label`, "negative"] },
-                          then: { $divide: [{ $multiply: [`$sentiment.${filters.model}.score`, -1] }, 2] },
-                        },
-                      ],
-                      default: 0,
+                $switch: {
+                  branches: [
+                    {
+                      case: { $eq: [`$sentiment.${filters.model}.label`, "positive"] },
+                      then: `$sentiment.${filters.model}.score`,
                     },
-                  },
-                ],
+                    {
+                      case: { $eq: [`$sentiment.${filters.model}.label`, "negative"] },
+                      then: { $multiply: [`$sentiment.${filters.model}.score`, -1] },
+                    },
+                  ],
+                  default: 0,
+                },
               },
             },
             positive_count: { $sum: { $cond: [{ $eq: [`$sentiment.${filters.model}.label`, "positive"] }, 1, 0] } },

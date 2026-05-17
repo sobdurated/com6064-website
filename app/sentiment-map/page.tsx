@@ -13,6 +13,8 @@ import { SentimentBadge } from "@/components/dashboard/sentiment-badge";
 import { useModel } from "@/components/model-provider";
 import { LoadingBar } from "@/components/dashboard/loading-bar";
 
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+
 function formatPercent(value: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
@@ -44,6 +46,7 @@ export default function SentimentMapPage() {
   const [postsPage, setPostsPage] = useState(1);
   const [postsData, setPostsData] = useState<PostsResponse | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [tagSort, setTagSort] = useState<{ key: 'mentions' | 'sentiment', direction: 'asc' | 'desc' }>({ key: 'mentions', direction: 'desc' });
 
   const isAnyLoading = provincesLoading || tagsLoading || postsLoading;
 
@@ -154,6 +157,24 @@ export default function SentimentMapPage() {
   if (filters.province) activeChips.push(`Province: ${filters.province}`);
   if (filters.q) activeChips.push(`Topic: ${filters.q}`);
 
+  const sortedTags = [...mapTags].sort((a, b) => {
+    if (tagSort.key === 'mentions') {
+      const aCount = a.count || a.total_count;
+      const bCount = b.count || b.total_count;
+      return tagSort.direction === 'asc' ? aCount - bCount : bCount - aCount;
+    } else {
+      return tagSort.direction === 'asc' ? a.avg_sentiment - b.avg_sentiment : b.avg_sentiment - a.avg_sentiment;
+    }
+  });
+
+  const handleSort = (key: 'mentions' | 'sentiment') => {
+    if (tagSort.key === key) {
+      setTagSort({ key, direction: tagSort.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      setTagSort({ key, direction: 'desc' });
+    }
+  };
+
   return (
     <DashboardShell title="Sentiment Map">
       <FilterToolbar
@@ -183,7 +204,14 @@ export default function SentimentMapPage() {
                 <p className="border-2 p-2">Province: {topProvince?.province ?? "N/A"}</p>
                 <p className="border-2 p-2">Positive ratio: {topProvince ? formatPercent(topProvince.ratios.positive) : "N/A"}</p>
                 <p className="border-2 p-2">Total mentions: {topProvince ? topProvince.total_posts.toLocaleString() : "0"}</p>
-                <p className="border-2 p-2">Average sentiment: {topProvince ? topProvince.average_sentiment.toFixed(2) : "0.00"}</p>
+                <p className="border-2 p-2 flex items-center gap-1">
+                  Average sentiment: 
+                  {topProvince ? (
+                    <span className={topProvince.average_sentiment > 0.1 ? "text-green-600 font-medium" : topProvince.average_sentiment < -0.1 ? "text-red-600 font-medium" : "text-muted-foreground"}>
+                      {topProvince.average_sentiment > 0 ? "+" : ""}{topProvince.average_sentiment.toFixed(2)}
+                    </span>
+                  ) : "0.00"}
+                </p>
               </div>
               {selectedProvince && (
                 <Button
@@ -208,16 +236,32 @@ export default function SentimentMapPage() {
               ) : mapTags.length > 0 ? (
                 <div className="overflow-x-auto border-2">
                   <table className="w-full text-sm text-left">
-                    <thead className="border-b-2 bg-accent/50">
+                    <thead className="border-b-2 bg-accent/50 select-none">
                       <tr>
                         <th className="p-2 font-semibold">Tag</th>
-                        <th className="p-2 font-semibold">Mentions</th>
-                        <th className="p-2 font-semibold">Avg. Sentiment</th>
+                        <th 
+                          className="p-2 font-semibold cursor-pointer hover:bg-accent/80 transition-colors"
+                          onClick={() => handleSort('mentions')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Mentions
+                            {tagSort.key === 'mentions' ? (tagSort.direction === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 text-muted-foreground opacity-50" />}
+                          </div>
+                        </th>
+                        <th 
+                          className="p-2 font-semibold cursor-pointer hover:bg-accent/80 transition-colors"
+                          onClick={() => handleSort('sentiment')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Avg. Sentiment
+                            {tagSort.key === 'sentiment' ? (tagSort.direction === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 text-muted-foreground opacity-50" />}
+                          </div>
+                        </th>
                         {!selectedProvince && <th className="p-2 font-semibold">Top Province</th>}
                       </tr>
                     </thead>
                     <tbody>
-                      {mapTags.map((t, idx) => (
+                      {sortedTags.map((t, idx) => (
                         <tr key={idx} className="border-b last:border-b-0 hover:bg-accent/20 transition-colors">
                           <td className="p-2 font-mono">#{t.tag}</td>
                           <td className="p-2">{t.count || t.total_count}</td>
