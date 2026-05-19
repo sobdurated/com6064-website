@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/dashboard/section-header";
 import { SentimentMapCard } from "@/components/dashboard/sentiment-map-card";
 import { Card } from "@/components/retroui/Card";
 import { withSearchParams } from "@/lib/api/query-string";
-import type { ProvinceMapRow, PostsResponse } from "@/lib/api/types";
+import type { ProvinceMapRow, DistrictMapRow, PostsResponse } from "@/lib/api/types";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/retroui/Badge";
 import { Button } from "@/components/retroui/Button";
@@ -47,8 +47,10 @@ export default function SentimentMapPage() {
   const [postsData, setPostsData] = useState<PostsResponse | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
   const [tagSort, setTagSort] = useState<{ key: 'mentions' | 'sentiment', direction: 'asc' | 'desc' }>({ key: 'mentions', direction: 'desc' });
+  const [districtsData, setDistrictsData] = useState<DistrictMapRow[]>([]);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
 
-  const isAnyLoading = provincesLoading || tagsLoading || postsLoading;
+  const isAnyLoading = provincesLoading || tagsLoading || postsLoading || districtsLoading;
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -86,6 +88,36 @@ export default function SentimentMapPage() {
       setTopProvince(provincesData[0]);
     }
   }, [filters.province, provincesData]);
+
+  // UC-05: Fetch district breakdown when a province is selected
+  useEffect(() => {
+    if (!filters.province) {
+      setDistrictsData([]);
+      return;
+    }
+    let active = true;
+    setDistrictsLoading(true);
+    const params: Record<string, string> = { model };
+    if (filters.from) params.from = filters.from;
+    if (filters.to) params.to = filters.to;
+    if (filters.q) params.q = filters.q;
+    const encoded = encodeURIComponent(filters.province);
+    fetch(withSearchParams(`/api/v1/map/provinces/${encoded}/districts`, params))
+      .then((res) => {
+        if (!res.ok) throw new Error('District fetch failed');
+        return res.json();
+      })
+      .then((data: DistrictMapRow[]) => {
+        if (active) setDistrictsData(data);
+      })
+      .catch(() => {
+        if (active) setDistrictsData([]);
+      })
+      .finally(() => {
+        if (active) setDistrictsLoading(false);
+      });
+    return () => { active = false; };
+  }, [filters.province, filters.from, filters.to, filters.q, model]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -205,7 +237,7 @@ export default function SentimentMapPage() {
                 <p className="border-2 p-2">Positive ratio: {topProvince ? formatPercent(topProvince.ratios.positive) : "N/A"}</p>
                 <p className="border-2 p-2">Total mentions: {topProvince ? topProvince.total_posts.toLocaleString() : "0"}</p>
                 <p className="border-2 p-2 flex items-center gap-1">
-                  Average sentiment: 
+                  Average sentiment:
                   {topProvince ? (
                     <span className={topProvince.average_sentiment > 0.1 ? "text-green-600 font-medium" : topProvince.average_sentiment < -0.1 ? "text-red-600 font-medium" : "text-muted-foreground"}>
                       {topProvince.average_sentiment > 0 ? "+" : ""}{topProvince.average_sentiment.toFixed(2)}
@@ -221,6 +253,45 @@ export default function SentimentMapPage() {
                 >
                   Clear province selection
                 </Button>
+              )}
+
+              {selectedProvince && (
+                <div className="mt-4">
+                  <SectionHeader
+                    title={`Districts in ${selectedProvince.province}`}
+                    description="Sentiment breakdown by district."
+                  />
+                  {districtsLoading ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground animate-pulse border-2 border-dashed">Loading districts...</div>
+                  ) : districtsData.length > 0 ? (
+                    <div className="overflow-x-auto border-2 max-h-[260px] overflow-y-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="border-b-2 bg-accent/50 sticky top-0">
+                          <tr>
+                            <th className="p-2 font-semibold">District</th>
+                            <th className="p-2 font-semibold">Posts</th>
+                            <th className="p-2 font-semibold">Sentiment</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {districtsData.map((d) => (
+                            <tr key={d.district} className="border-b last:border-b-0 hover:bg-accent/20 transition-colors">
+                              <td className="p-2">{d.district}</td>
+                              <td className="p-2">{d.total_posts.toLocaleString()}</td>
+                              <td className="p-2">
+                                <span className={d.average_sentiment > 0.1 ? "text-green-600 font-medium" : d.average_sentiment < -0.1 ? "text-red-600 font-medium" : "text-muted-foreground"}>
+                                  {d.average_sentiment > 0 ? "+" : ""}{d.average_sentiment.toFixed(2)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground border-2 border-dashed">No district data available.</div>
+                  )}
+                </div>
               )}
             </Card.Content>
           </Card>
@@ -239,7 +310,7 @@ export default function SentimentMapPage() {
                     <thead className="border-b-2 bg-accent/50 select-none">
                       <tr>
                         <th className="p-2 font-semibold">Tag</th>
-                        <th 
+                        <th
                           className="p-2 font-semibold cursor-pointer hover:bg-accent/80 transition-colors"
                           onClick={() => handleSort('mentions')}
                         >
@@ -248,7 +319,7 @@ export default function SentimentMapPage() {
                             {tagSort.key === 'mentions' ? (tagSort.direction === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 text-muted-foreground opacity-50" />}
                           </div>
                         </th>
-                        <th 
+                        <th
                           className="p-2 font-semibold cursor-pointer hover:bg-accent/80 transition-colors"
                           onClick={() => handleSort('sentiment')}
                         >
